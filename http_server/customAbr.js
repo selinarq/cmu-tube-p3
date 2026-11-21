@@ -44,8 +44,40 @@ function CustomBitrateRule() {
         // You may find it helpful to reference the write up for  
         // - How to get current and list of available representations(aka chunk qualities)
         // - How to create/initialize a SwitchRequest to signal change in quality
+        /**
+         * const switchRequest = SwitchRequest ( context ) . create () ;
+           switchRequest . representation = targetRep ;
+           switchRequest . reason = `my buffer is getting full !`;
+           console .log (`[ customABR ] ${ switchRequest . reason }`) ;
+           return switchRequest ;
+         */
         
         // Return empty switch request if no quality change is needed
+
+        // BBA-0
+        /**
+         * Below the lower reservoir -> lowest bitrate (Reservoir: 0-5s)
+         * In between the lower and upper reservoir -> bitrate ramps up with buffer (Cushion: 5-25s)
+         * Above the upper reservoir -> highest bitrate (Upper reservoir: >25s)
+         */
+        const switchRequest = SwitchRequest(context).create();
+        const mediaInfo = rulesContext.getMediaInfo();
+        const abrController = rulesContext.getAbrController();
+        // list of available representations for the current media
+        // note: sort this list
+        const representations = abrController.getPossibleVoRepresentations(mediaInfo);
+
+        if (getCurrentBufferLevel(context) < 5) {
+            switchRequest.representation = representations[0]; // lowest bitrate
+            switchRequest.reason = 'Buffer below lower reservoir, switching to lowest bitrate';
+            console.log(`[customABR] ${switchRequest.reason}`);
+            return switchRequest;
+        } else if (getCurrentBufferLevel(context) >= 5 && getCurrentBufferLevel(context) <= 25) {
+            // Ramp up bitrate with buffer level
+            const bufferLevel = getCurrentBufferLevel(context);
+            // var targetRepresentation = representations[]
+        }
+
         return SwitchRequest(context).create();
     }
 
